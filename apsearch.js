@@ -121,4 +121,74 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("mousedown", (e) => {
     if (!box.contains(e.target) && e.target !== depIn && e.target !== arrIn) close();
   });
+
+
+
+  const goBtn = document.getElementById("go");
+  const statusEl = document.getElementById("st");
+
+
+    // Helper to generate an array of YYYY-MM-DD strings between two dates
+    const getDatesInRange = (startDateStr, endDateStr) => {
+      const dates = [];
+      let curr = new Date(startDateStr);
+      const end = new Date(endDateStr);
+
+      // Safety check for invalid dates
+      if (isNaN(curr) || isNaN(end) || curr > end) return [];
+
+      while (curr <= end) {
+        dates.push(curr.toISOString().split('T')[0]);
+        curr.setDate(curr.getDate() + 1);
+      }
+      return dates;
+    };
+
+    // Inside your search button click listener:
+    goBtn.addEventListener("click", async () => {
+      const depChips = document.getElementById("depChips");
+      const arrChips = document.getElementById("arrChips");
+      const d1 = document.getElementById("d1").value;
+      const d2 = document.getElementById("d2").value;
+
+      // 1. Extract and format the data to match FlightSearchQuery
+      /** @type {FlightSearchQuery} */
+      const searchQuery = {
+        origins: Array.from(depChips.children).map(c => c.dataset.code),
+        destinations: Array.from(arrChips.children).map(c => c.dataset.code),
+        departure_dates: getDatesInRange(d1, d2)
+      };
+
+      // 2. Validation
+      if (searchQuery.origins.length === 0 || searchQuery.destinations.length === 0) {
+        statusEl.textContent = "❌ Please add at least one departure and arrival airport.";
+        return;
+      }
+      if (searchQuery.departure_dates.length === 0) {
+        statusEl.textContent = "❌ Please select both a start and end date.";
+        return;
+      }
+
+      // 3. Send to backend
+      console.log("Sending query:", searchQuery);
+
+      try {
+        const response = await fetch('YOUR_BACKEND_URL/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(searchQuery)
+        });
+        const results = await response.json();
+        console.log("Results:", results);
+        // Call your render function here...
+      } catch (err) {
+        console.error("Search failed", err);
+      }
+    });
+
+
+
+
+
+
 });
