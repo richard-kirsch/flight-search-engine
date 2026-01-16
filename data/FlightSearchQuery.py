@@ -1,27 +1,22 @@
 from typing import List
 from datetime import date
 
-from data import Airport
-
 from pydantic import BaseModel, Field
 
 
 class FlightSearchQuery(BaseModel):
-    # Change origin to a list of Airport objects
-    origins: List[Airport] = Field(
+    origins: List[str] = Field(
         ...,
         min_length=1,
-        description="List of origin Airports"
+        description="List of origin airport codes"
     )
 
-    # Change destination to a list of Airport objects
-    destinations: List[Airport] = Field(
+    destinations: List[str] = Field(
         ...,
         min_length=1,
-        description="List of destination Airports"
+        description="List of destination airport codes"
     )
 
-    # Change departure_date to a list of dates
     departure_dates: List[date] = Field(
         ...,
         min_length=1,
