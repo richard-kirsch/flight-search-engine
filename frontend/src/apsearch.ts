@@ -2,6 +2,7 @@ import { config } from './config';
 import type {Airport} from "./frontend-data-interfaces/airport.ts";
 import type {FlightSearchQuery} from "./frontend-data-interfaces/flight-search-query.ts";
 import type {FlightSearchResult} from "./frontend-data-interfaces/flight-search-result.ts";
+import {renderFlightResults} from "./results-renderer.ts";
 
 document.addEventListener("DOMContentLoaded", () => {
   // Type-safe DOM selection
@@ -13,6 +14,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const statusEl = document.getElementById("st") as HTMLElement | null;
   const d1In = document.getElementById("d1") as HTMLInputElement | null;
   const d2In = document.getElementById("d2") as HTMLInputElement | null;
+  const listContainer = document.getElementById("list") as HTMLElement;
+  const moreWrapper = document.getElementById("more") as HTMLElement;
 
   if (!depIn || !arrIn || !depChips || !arrChips || !goBtn || !statusEl || !d1In || !d2In) return;
 
@@ -181,6 +184,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   goBtn.addEventListener("click", async () => {
+    // TODO: Disable button
     const d1 = d1In.value;
     const d2 = d2In.value;
 
@@ -200,6 +204,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
+
       statusEl.textContent = "Searching...";
       const response = await fetch(`${config.apiUrl}/search`, {
         method: 'POST',
@@ -211,10 +216,14 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log("Results:", results);
       statusEl.textContent = `Found ${results.length} flights!`;
 
-      // Call your render function here...
+
+      if (results) {
+        renderFlightResults(listContainer, moreWrapper, results);
+      }
+
     } catch (err) {
       console.error("Search failed", err);
-      statusEl.textContent = "❌ Search failed. Check console.";
+      statusEl.textContent = "❌ Search failed.";
     }
   });
 });

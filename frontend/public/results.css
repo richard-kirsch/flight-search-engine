@@ -1,0 +1,133 @@
+.flight-results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 10px;
+}
+
+.flight-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  display: flex;
+  align-items: center;
+  padding: 20px;
+  border: 1px solid #e5e7eb;
+}
+
+/* Airline Info Column */
+.airline-info {
+  flex: 0 0 120px; /* Fixed width so path has more room */
+  font-weight: 700;
+  color: #1e293b;
+}
+
+/* The Main Combined Route Column */
+.route-path-container {
+  flex: 3; /* This makes the middle column take up most of the space */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  padding: 0 20px;
+}
+
+/* Departure / Arrival Points */
+.endpoint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 60px;
+}
+
+.endpoint .time {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.endpoint .code {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #111827;
+}
+
+/* The Long Arrow Area */
+.path-visual {
+  flex-grow: 1; /* This pushes the endpoints away, making the line long */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  min-width: 150px;
+}
+
+.path-line {
+  width: 100%;
+  height: 2px;
+  background-color: #d1d5db;
+  position: relative;
+  margin: 8px 0;
+}
+
+/* The Arrow Head */
+.path-line::after {
+  content: "";
+  position: absolute;
+  right: -2px;
+  top: -4px;
+  width: 10px;
+  height: 10px;
+  border-top: 2px solid #d1d5db;
+  border-right: 2px solid #d1d5db;
+  transform: rotate(45deg);
+}
+
+.duration-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.stops-label {
+  font-size: 0.75rem;
+  color: #059669; /* Direct = Green */
+  font-weight: 600;
+}
+
+.stops-label.has-stops {
+  color: #d97706; /* Stops = Orange */
+}
+
+/* Extra Info Columns */
+.date-info {
+  flex: 0 0 100px;
+  text-align: center;
+  color: #6b7280;
+  font-size: 0.9rem;
+  border-left: 1px solid #f3f4f6;
+}
+
+.price-info {
+  flex: 0 0 150px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.price-val {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: #0770e3;
+}
+
+.select-btn {
+  background: #0770e3;
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 6px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 5px;
+}
