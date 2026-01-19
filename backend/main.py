@@ -103,7 +103,7 @@ async def search_flights(query: FlightSearchQuery):
         ### return {"flights": flights}
         results = to_results(flights)
         return [x.model_dump() for x in results]
-                
+
                     
                 
             #TODO: make sure it parses all date ranges and such
@@ -171,30 +171,6 @@ def to_results(amadeus_offers: List[Dict[str, Any]]) -> List[FlightSearchResult]
 
 
 
-#example json returned from backend
-# {
-#   "flights": [
-#     {
-#       "airline": "LH",
-#       "date": "2026-01-19",
-#       "origin": "BOS",
-#       "destination": "CGN",
-#       "duration": "8h 55m",
-#       "start_time": "2026-01-19T17:20:00",
-#       "end_time": "2026-01-20T07:15:00",
-#       "layovers": ["FRA 2h 10m"],
-#       "price": { "amount": 612.34, "currency": "USD" }
-#     }
-#   ]
-# }
-
-
-
-
-
-
-
-# --- 5. Run the server ---
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     uvicorn.run(app, host="0.0.0.0", port=port)
