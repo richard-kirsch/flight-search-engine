@@ -11,5 +11,5 @@ class FlightSegment(BaseModel):
 class FlightSearchResult(BaseModel):
     airline: str
     date: date
-    price: float
+    price: float    
     segments: List[FlightSegment]

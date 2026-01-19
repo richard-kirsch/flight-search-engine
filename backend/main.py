@@ -3,14 +3,23 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import httpx
 import os
-
+import asyncio
+from datetime import datetime
+from typing import List, Dict, Any
 from data.FlightSearchQuery import FlightSearchQuery
+###MOCK QUERY
+# {
+#   "origins": ["BOS", "JFK"],
+#   "destinations": ["CGN", "LHR"],
+#   "departure_dates": ["2026-01-19", "2026-01-20", "2026-01-21"]
+# } 
 
 app = FastAPI(title="Flight Search Engine")
-
+token = None 
 base = "https://test.api.amadeus.com"  # or https://api.amadeus.com for prod
 client_id = os.environ["AMADEUS_CLIENT_ID"]
 client_secret = os.environ["AMADEUS_CLIENT_SECRET"]
+token_lock = asyncio.Lock() # this stops multiple versions calling the new create function
 
 async def get_token(client: httpx.AsyncClient) -> str:
     r = await client.post(
@@ -24,6 +33,14 @@ async def get_token(client: httpx.AsyncClient) -> str:
         timeout=20,
     )
     return r.json()["access_token"]
+async def ensure_token(client: httpx.AsyncClient) -> str:
+    global token
+    if token is not None:
+        return token
+    async with token_lock: # stops extra token calls
+        if token is None: #check after lock leaves
+            token = await get_token(client)
+    return token
 
 # CORS Configuration
 app.add_middleware(
@@ -53,29 +70,134 @@ async def search_flights(query: FlightSearchQuery):
             # TODO: Call flight API here
             # response = await client.get("https://api.example.com/flights", params=query.model_dump())
             # data = response.json()
-            if token is None: 
-                token = await get_token(client) 
-                response = await client.get(f"{base}/v2/shopping/flight-offers", params=query.model_dump(), headers={"Authorization": f"Bearer {token}"}) 
-            if response.status_code == 401: 
-                token = await get_token(client) 
-                response = await client.get(f"{base}/v2/shopping/flight-offers", params=query.model_dump(), headers={"Authorization": f"Bearer {token}"})
-            pass
-
+            #---------CHECKS WE HAVE TOKEN 
+            # instead of token check here we will use ensure_token
+            global token 
+            
+            token = await ensure_token(client) 
+           #response = await client.get(f"{base}/v2/shopping/flight-offers", params=query.model_dump(), headers={"Authorization": f"Bearer {token}"}) 
+            #---------Now we have token
+            #TODO: Parse json response
+            # Parsing json response: 
+            flights = []
+            for origin, dest, dt in parse_query(query): 
+                
+                params = {
+                    "originLocationCode": origin,
+                     "destinationLocationCode": dest,
+                     "departureDate": dt.isoformat(),
+                     "adults": 1,
+                     "currencyCode": "USD",
+                     "max": 50,
+             }
+                
+                r = await client.get(
+                     f"{base}/v2/shopping/flight-offers",
+                    params=params,
+                    headers={"Authorization": f"Bearer {token}"},
+                    timeout=30,
+                )
+                
+                data = r.json()
+                flights.extend(data.get("data", []))
+        ### return {"flights": flights}
+            results = to_results(flights)
+            return {"flights": [x.model_dump() for x in results]}
+                
+                    
+                
+            #TODO: make sure it parses all date ranges and such
         # Mock Data
-        return {
-            "status": "success",
-            "search_criteria": query,
-            "results": [
-                {"id": 1, "airline": "FastAPI Air", "price": 450},
-                {"id": 2, "airline": "Async Airways", "price": 520}
-            ]
-        }
+        # return {
+        #     "status": "success",
+        #     "search_criteria": query,
+        #     "results": [
+        #         {"id": 1, "airline": "FastAPI Air", "price": 450},
+        #         {"id": 2, "airline": "Async Airways", "price": 520}
+        #     ]
+        # }
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+
+#TODO: Parse_query - turn it into jobs to send
+def parse_query(q: FlightSearchQuery):
+    # yields (origin, destination, date)
+    for o in q.origins:
+        for d in q.destinations:
+            for dt in q.departure_dates:
+                yield (o.upper().strip(), d.upper().strip(), dt)
+   
+   
+def _dt(s: str) -> datetime: # datetime helper 
+    # handles "...Z" if it appears
+    return datetime.fromisoformat(s.replace("Z", "+00:00"))
+             
+#TODO: format_results - turn that into json to send back to frontend 
+def to_results(amadeus_offers: List[Dict[str, Any]]) -> List[FlightSearchResult]:
+    out: List[FlightSearchResult] = []
+
+    for offer in amadeus_offers:
+        itin = offer["itineraries"][0]
+        segs = itin["segments"]
+
+        segments = [
+            FlightSegment(
+                origin=s["departure"]["iataCode"],
+                destination=s["arrival"]["iataCode"],
+                start_time=_dt(s["departure"]["at"]),
+                end_time=_dt(s["arrival"]["at"]),
+            )
+            for s in segs
+        ]
+
+        airline = (offer.get("validatingAirlineCodes") or [segs[0].get("carrierCode", "")])[0]
+        start_date = _dt(segs[0]["departure"]["at"]).date()
+        price = float(offer["price"]["total"])
+
+        out.append(
+            FlightSearchResult(
+                airline=airline,
+                date=start_date,
+                price=price,
+                segments=segments,
+            )
+        )
+
+    out.sort(key=lambda r: r.price)
+    return out[:6]
+
+
+
+#example json returned from backend
+# {
+#   "flights": [
+#     {
+#       "airline": "LH",
+#       "date": "2026-01-19",
+#       "origin": "BOS",
+#       "destination": "CGN",
+#       "duration": "8h 55m",
+#       "start_time": "2026-01-19T17:20:00",
+#       "end_time": "2026-01-20T07:15:00",
+#       "layovers": ["FRA 2h 10m"],
+#       "price": { "amount": 612.34, "currency": "USD" }
+#     }
+#   ]
+# }
+
+
+
+
+
 
 
 # --- 5. Run the server ---
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     uvicorn.run(app, host="0.0.0.0", port=port)
+    
+    
+    

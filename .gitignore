@@ -23,3 +23,4 @@ dist-ssr
 *.sln
 *.sw?
 /frontend/environment.env
+backend/environment.env
