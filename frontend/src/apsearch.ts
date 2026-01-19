@@ -1,8 +1,8 @@
 import { config } from './config';
-import type {Airport} from "./frontend-data-interfaces/airport.ts";
-import type {FlightSearchQuery} from "./frontend-data-interfaces/flight-search-query.ts";
-import type {FlightSearchResult} from "./frontend-data-interfaces/flight-search-result.ts";
-import {renderFlightResults} from "./results-renderer.ts";
+import type {Airport} from "./frontend-data-interfaces/airport";
+import type {FlightSearchQuery} from "./frontend-data-interfaces/flight-search-query";
+import type {FlightSearchResult} from "./frontend-data-interfaces/flight-search-result";
+import {renderFlightResults} from "./results-renderer";
 
 document.addEventListener("DOMContentLoaded", () => {
   // Type-safe DOM selection
@@ -17,7 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const listContainer = document.getElementById("list") as HTMLElement;
   const moreWrapper = document.getElementById("more") as HTMLElement;
 
-  if (!depIn || !arrIn || !depChips || !arrChips || !goBtn || !statusEl || !d1In || !d2In) return;
+  if (!depIn || !arrIn || !depChips || !arrChips || !goBtn || !statusEl || !d1In || !d2In || !listContainer || !moreWrapper) return;
 
   // State Management
   let A: Airport[] = [];
