@@ -201,3 +201,139 @@ if __name__ == "__main__":
     
     
     
+    
+    
+    
+    
+    
+    
+    ## DATA RETURNED FROM BACKEND
+#    [
+#   {
+#     "airline": "TK",
+#     "date": "2026-01-19",
+#     "price": 780.1,
+#     "segments": [
+#       {
+#         "origin": "BOS",
+#         "destination": "IST",
+#         "start_time": "2026-01-19T20:00:00",
+#         "end_time": "2026-01-20T13:25:00"
+#       },
+#       {
+#         "origin": "IST",
+#         "destination": "SYD",
+#         "start_time": "2026-01-20T15:30:00",
+#         "end_time": "2026-01-21T19:50:00"
+#       }
+#     ]
+#   },
+#   {
+#     "airline": "QR",
+#     "date": "2026-01-19",
+#     "price": 1106.8,
+#     "segments": [
+#       {
+#         "origin": "BOS",
+#         "destination": "DOH",
+#         "start_time": "2026-01-19T21:05:00",
+#         "end_time": "2026-01-20T17:00:00"
+#       },
+#       {
+#         "origin": "DOH",
+#         "destination": "SYD",
+#         "start_time": "2026-01-20T20:40:00",
+#         "end_time": "2026-01-21T18:50:00"
+#       }
+#     ]
+#   },
+#   {
+#     "airline": "EK",
+#     "date": "2026-01-19",
+#     "price": 1384.3,
+#     "segments": [
+#       {
+#         "origin": "BOS",
+#         "destination": "DXB",
+#         "start_time": "2026-01-19T22:10:00",
+#         "end_time": "2026-01-20T19:20:00"
+#       },
+#       {
+#         "origin": "DXB",
+#         "destination": "SYD",
+#         "start_time": "2026-01-20T21:45:00",
+#         "end_time": "2026-01-21T18:35:00"
+#       }
+#     ]
+#   },
+#   {
+#     "airline": "B6",
+#     "date": "2026-01-19",
+#     "price": 1495.8,
+#     "segments": [
+#       {
+#         "origin": "BOS",
+#         "destination": "DOH",
+#         "start_time": "2026-01-19T21:05:00",
+#         "end_time": "2026-01-20T17:00:00"
+#       },
+#       {
+#         "origin": "DOH",
+#         "destination": "SYD",
+#         "start_time": "2026-01-20T20:40:00",
+#         "end_time": "2026-01-21T18:50:00"
+#       }
+#     ]
+#   },
+#   {
+#     "airline": "EY",
+#     "date": "2026-01-19",
+#     "price": 1504.3,
+#     "segments": [
+#       {
+#         "origin": "BOS",
+#         "destination": "DCA",
+#         "start_time": "2026-01-19T20:00:00",
+#         "end_time": "2026-01-19T21:51:00"
+#       },
+#       {
+#         "origin": "IAD",
+#         "destination": "AUH",
+#         "start_time": "2026-01-20T21:10:00",
+#         "end_time": "2026-01-21T19:05:00"
+#       },
+#       {
+#         "origin": "AUH",
+#         "destination": "SYD",
+#         "start_time": "2026-01-21T21:05:00",
+#         "end_time": "2026-01-22T17:55:00"
+#       }
+#     ]
+#   },
+#   {
+#     "airline": "EY",
+#     "date": "2026-01-19",
+#     "price": 1504.3,
+#     "segments": [
+#       {
+#         "origin": "BOS",
+#         "destination": "DCA",
+#         "start_time": "2026-01-19T20:00:00",
+#         "end_time": "2026-01-19T21:51:00"
+#       },
+#       {
+#         "origin": "IAD",
+#         "destination": "AUH",
+#         "start_time": "2026-01-20T21:10:00",
+#         "end_time": "2026-01-21T19:05:00"
+#       },
+#       {
+#         "origin": "AUH",
+#         "destination": "SYD",
+#         "start_time": "2026-01-22T09:50:00",
+#         "end_time": "2026-01-23T06:35:00"
+#       }
+#     ]
+#   }
+# ]
+
