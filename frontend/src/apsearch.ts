@@ -204,6 +204,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
+      goBtn.disabled = true
 
       statusEl.textContent = "Searching...";
       const response = await fetch(`${config.apiUrl}/search`, {
@@ -224,6 +225,8 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (err) {
       console.error("Search failed", err);
       statusEl.textContent = "❌ Search failed.";
+    } finally {
+      goBtn.disabled = false
     }
   });
 });
