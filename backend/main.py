@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
@@ -6,21 +8,36 @@ import os
 import asyncio
 from datetime import datetime
 from typing import List, Dict, Any
+
+from FlightCache import FlightCache
 from data.FlightSearchQuery import FlightSearchQuery
 from data.FlightSearchResult import FlightSearchResult, FlightSegment
-###MOCK QUERY
-# {
-#   "origins": ["BOS", "JFK"],
-#   "destinations": ["CGN", "LHR"],
-#   "departure_dates": ["2026-01-19", "2026-01-20", "2026-01-21"]
-# } 
 
-app = FastAPI(title="Flight Search Engine")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # --- Startup Logic ---
+    # Start the background cleanup task
+    cleanup_task = asyncio.create_task(cache_cleaner())
+    print("Background cache cleaner started.")
+
+    yield  # The app runs while this is yielded
+
+    # --- Shutdown Logic ---
+    cleanup_task.cancel()
+    try:
+        await cleanup_task
+    except asyncio.CancelledError:
+        print("Background cache cleaner stopped.")
+
+app = FastAPI(title="Flight Search Engine", lifespan=lifespan)
 token = None 
 base = "https://test.api.amadeus.com"  # or https://api.amadeus.com for prod
 client_id = os.environ["AMADEUS_CLIENT_ID"]
 client_secret = os.environ["AMADEUS_CLIENT_SECRET"]
 token_lock = asyncio.Lock() # this stops multiple versions calling the new create function
+
+flight_cache = FlightCache()
 
 async def get_token(client: httpx.AsyncClient) -> str:
     r = await client.post(
@@ -63,66 +80,56 @@ async def get_status():
 
 @app.post("/search")
 async def search_flights(query: FlightSearchQuery):
-    """
-    Search for flights.
-    """
     try:
         async with httpx.AsyncClient() as client:
-            # TODO: Call flight API here
-            # response = await client.get("https://api.example.com/flights", params=query.model_dump())
-            # data = response.json()
-            #---------CHECKS WE HAVE TOKEN 
-            # instead of token check here we will use ensure_token
-            global token 
-            
-            token = await ensure_token(client) 
-           #response = await client.get(f"{base}/v2/shopping/flight-offers", params=query.model_dump(), headers={"Authorization": f"Bearer {token}"}) 
-            #---------Now we have token
-            #TODO: Parse json response
-            # Parsing json response: 
-            flights = []
-            for origin, dest, dt in parse_query(query): 
-                
+            global token
+            token = await ensure_token(client)
+
+            results = []
+
+            for origin, dest, dt in parse_query(query):
+                dt_str = dt.isoformat()
+
+                # Check cache
+                cached_data = flight_cache.get(origin, dest, dt_str)
+                if cached_data:
+                    results.extend(cached_data)
+                    continue
+
+                # If not in cache, call API
                 params = {
                     "originLocationCode": origin,
-                     "destinationLocationCode": dest,
-                     "departureDate": dt.isoformat(),
-                     "adults": 1,
-                     "currencyCode": "USD",
-                     "max": 50,
-             }
-                
+                    "destinationLocationCode": dest,
+                    "departureDate": dt_str,
+                    "adults": 1,
+                    "currencyCode": "USD",
+                    "max": 50,
+                }
+
                 r = await client.get(
-                     f"{base}/v2/shopping/flight-offers",
+                    f"{base}/v2/shopping/flight-offers",
                     params=params,
                     headers={"Authorization": f"Bearer {token}"},
                     timeout=30,
                 )
-                data = r.json()
-                flights.extend(data.get("data", []))
-        ### return {"flights": flights}
-        results = to_results(flights)
-        return [x.model_dump() for x in results]
 
-                    
-                
-            #TODO: make sure it parses all date ranges and such
-        # Mock Data
-        # return {
-        #     "status": "success",
-        #     "search_criteria": query,
-        #     "results": [
-        #         {"id": 1, "airline": "FastAPI Air", "price": 450},
-        #         {"id": 2, "airline": "Async Airways", "price": 520}
-        #     ]
-        # }
+                data = r.json()
+                flights = parse_amadeus_results(data.get("data", []))
+                flight_dicts = [f.model_dump() for f in flights]
+                flight_cache.set(origin, dest, dt_str, flight_dicts)
+
+                results.extend(flight_dicts)
+
+        results.sort(key=lambda r: r["price"])
+
+        return results[:6]
 
     except Exception as e:
+        print(f"Error: {e}")  # Log it
         raise HTTPException(status_code=500, detail=str(e))
 
 
 
-#TODO: Parse_query - turn it into jobs to send
 def parse_query(q: FlightSearchQuery):
     # yields (origin, destination, date)
     for o in q.origins:
@@ -135,8 +142,7 @@ def _dt(s: str) -> datetime: # datetime helper
     # handles "...Z" if it appears
     return datetime.fromisoformat(s.replace("Z", "+00:00"))
              
-#TODO: format_results - turn that into json to send back to frontend 
-def to_results(amadeus_offers: List[Dict[str, Any]]) -> List[FlightSearchResult]:
+def parse_amadeus_results(amadeus_offers: List[Dict[str, Any]]) -> List[FlightSearchResult]:
     out: List[FlightSearchResult] = []
 
     for offer in amadeus_offers:
@@ -166,8 +172,20 @@ def to_results(amadeus_offers: List[Dict[str, Any]]) -> List[FlightSearchResult]
             )
         )
 
-    out.sort(key=lambda r: r.price)
-    return out[:6]
+    return out
+
+
+
+async def cache_cleaner():
+    """Run cleanup every hour."""
+    while True:
+        try:
+            await asyncio.sleep(3600)
+            flight_cache.cleanup()
+        except asyncio.CancelledError:
+            break
+        except Exception as e:
+            print(f"Error in cache cleaner: {e}")
 
 
 
